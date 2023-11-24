@@ -5,8 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
- * Ignore requests for favicon.ico
- * (prevents false errors in log when testing from a browser).
+ * Controller to ignore requests for favicon.ico when testing from a browser.
  */
 @Controller
 public class FaviconController {

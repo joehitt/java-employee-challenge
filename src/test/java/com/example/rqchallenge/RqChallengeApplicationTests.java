@@ -1,14 +1,16 @@
 package com.example.rqchallenge;
 
-import com.example.rqchallenge.employees.*;
+import com.example.rqchallenge.employees.Employee;
+import com.example.rqchallenge.employees.EmployeeController;
+import com.example.rqchallenge.employees.IEmployeeController;
+import com.example.rqchallenge.employees.IEmployeeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -21,19 +23,18 @@ import static org.mockito.Mockito.when;
 @SpringBootTest
 class RqChallengeApplicationTests {
 
-    private final Employee inputTestEmployee = new Employee(
-            // MAX_VALUE here to check that the API is not setting the ID to the input value,
-            // but rather server-assigning a new ID
-            Integer.MAX_VALUE, "Dr. Heath Botello", 88500, 42, ""
-            // (generally this would be a server-assigned filename)
-    );
+    private final Employee inputTestEmployee = new Employee(Integer.MAX_VALUE, "Dr. Heath Botello", 88500, 42, "");
     private final List<Employee> testData = new ArrayList<>();
     @MockBean
     private IEmployeeService employeeService;
     private IEmployeeController employeeController;
 
-    private Employee getOutputTestEmployee(Employee input) {
-        return new Employee(9999, input.getName(), input.getSalary(), input.getAge(), "9999.png");
+    private Mono<Employee> getOutputTestEmployee(Map<String, Object> input) {
+        return Mono.just(new Employee(9999,
+                                      (String) input.get("name"),
+                                      (Integer) input.get("salary"),
+                                      (Integer) input.get("age"),
+                                      "9999.png"));
     }
 
     private void addTestEmployee(int id,
@@ -63,50 +64,41 @@ class RqChallengeApplicationTests {
         addTestEmployee(1500, "Christos Hedda Readdie", 54000, 20, "");
     }
 
+
     @BeforeEach
-    public void init() throws ServiceException, IOException {
+    @SuppressWarnings("unchecked")
+    public void init() {
         generateTestData();
         // mock service
-        when(employeeService.getAllEmployees()).thenReturn(testData);
-        when(employeeService.getEmployeeById(500)).thenReturn(Optional.of(testData.get(5)));
+        when(employeeService.getAllEmployees()).thenReturn(Flux.fromIterable(testData));
+        when(employeeService.getEmployeeById(500)).thenReturn(Mono.just(Optional.of(testData.get(5))));
         when(employeeService.createEmployee(any())).thenAnswer(x -> {
-            Employee submitted = (Employee) x.getArguments()[0];
+            Map<String, Object> submitted = (Map<String, Object>) x.getArguments()[0];
             return getOutputTestEmployee(submitted);
         });
         when(employeeService.deleteEmployeeById(anyInt())).thenAnswer(x -> {
             int submittedId = (int) x.getArguments()[0];
-            return testData.stream()
-                           .filter(e -> e.getId() == submittedId)
-                           .findFirst()
-                           .orElseThrow()
-                           .getName();
+            String deletedName = testData.stream()
+                                         .filter(e -> e.getId() == submittedId)
+                                         .findFirst()
+                                         .orElseThrow()
+                                         .getName();
+            return Mono.just(deletedName);
         });
         employeeController = new EmployeeController(employeeService);
     }
 
     @Test
-    void testGetAllEmployees() throws IOException {
-        ResponseEntity<List<Employee>> response = employeeController.getAllEmployees();
-        assertHttpOk(response);
-        List<Employee> employeeList = response.getBody();
+    void testGetAllEmployees() {
+        List<Employee> employeeList = employeeController.getAllEmployees()
+                                                        .collectList()
+                                                        .block();
         assertNotNull(employeeList);
         assertEquals(employeeList.size(), testData.size(), "Total size of results was incorrect.");
         IntStream.range(0, employeeList.size())
                  .forEach(index -> {
                      assertEmployeeMatches(testData.get(index), employeeList.get(index));
                  });
-    }
-
-    private void assertHttpOk(ResponseEntity<?> response) {
-        assertEquals(response.getStatusCodeValue(), HttpStatus.OK.value(), "Test should return OK HTTP status");
-    }
-
-    @Test
-    void testGetEmployeeById() {
-        ResponseEntity<Employee> response = employeeController.getEmployeeById(testData.get(5)
-                                                                                       .getId() + "");
-        assertHttpOk(response);
-        assertEmployeeMatches(testData.get(5), response.getBody());
     }
 
     private void assertEmployeeMatches(Employee expected,
@@ -124,22 +116,30 @@ class RqChallengeApplicationTests {
 
 
     @Test
+    void testGetEmployeeById() {
+        Mono<Employee> employeeMono = employeeController.getEmployeeById(testData.get(5)
+                                                                                 .getId() + "");
+        Employee employee = employeeMono.block();
+        assertEmployeeMatches(testData.get(5), employee);
+    }
+
+    @Test
     void testGetEmployeesByNameSearch() {
-        ResponseEntity<List<Employee>> response = employeeController.getEmployeesByNameSearch("Hayden");
-        assertHttpOk(response);
+        Flux<Employee> employeeFlux = employeeController.getEmployeesByNameSearch("Hayden");
         String message = "getEmployeesByNameSearch should return %s";
-        List<Employee> employees = response.getBody();
+        List<Employee> employees = employeeFlux.collectList()
+                                               .block();
         assertNotNull(employees, format(message, "a non-null list."));
         assertEquals(2, employees.size(), format(message, "the correct number of results."));
         assertEmployeeMatches(testData.get(2), employees.get(0));
         assertEmployeeMatches(testData.get(13), employees.get(1));
     }
 
+
     @Test
     void testGetHighestSalaryOfEmployees() {
-        ResponseEntity<Integer> response = employeeController.getHighestSalaryOfEmployees();
-        assertHttpOk(response);
-        Integer salary = response.getBody();
+        Mono<Integer> salaryMono = employeeController.getHighestSalaryOfEmployees();
+        Integer salary = salaryMono.block();
         assertNotNull(salary);
         assertEquals(290000, salary);
     }
@@ -147,10 +147,10 @@ class RqChallengeApplicationTests {
     @Test
     void testGetTopTenHighestEarningEmployeeNames() {
 
-        ResponseEntity<List<String>> response = employeeController.getTopTenHighestEarningEmployeeNames();
-        assertHttpOk(response);
+        Flux<String> employeeNamesFlux = employeeController.getTopTenHighestEarningEmployeeNames();
         String message = "getTopTenHighestEarningEmployeeNames should return %s";
-        List<String> topTen = response.getBody();
+        List<String> topTen = employeeNamesFlux.collectList()
+                                               .block();
         assertNotNull(topTen, format(message, "a non-null list."));
         assertEquals(10, topTen.size(), "the correct number of employees.");
         String listMessage = format(message, "the correct employee names in the correct order");
@@ -188,9 +188,9 @@ class RqChallengeApplicationTests {
         map.put("age", input.getAge());
         map.put("profileImage", input.getProfileImage());
 
-        ResponseEntity<Employee> response = employeeController.createEmployee(map);
-        assertHttpOk(response);
-        Employee created = response.getBody();
+        Mono<Employee> createdMono = employeeController.createEmployee(map);
+
+        Employee created = createdMono.block();
         String message = "Method createEmployee should return %s";
         assertNotNull(created, format(message, "a non-null Employee object"));
         assertTrue(created.getId() > 0, format(message, "an Employee object with a server-assigned ID > 0"));
@@ -204,12 +204,12 @@ class RqChallengeApplicationTests {
 
     }
 
+
     @Test
     void testDeleteEmployeeById() {
         Employee toDelete = testData.get(14);
-        ResponseEntity<String> response = employeeController.deleteEmployeeById(toDelete.getId() + "");
-        assertHttpOk(response);
-        String deletedName = response.getBody();
+        Mono<String> deletedMono = employeeController.deleteEmployeeById(toDelete.getId() + "");
+        String deletedName = deletedMono.block();
         assertEquals(toDelete.getName(), deletedName);
     }
 

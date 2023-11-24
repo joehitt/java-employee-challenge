@@ -1,7 +1,9 @@
 package com.example.rqchallenge.employees;
 
-import java.io.IOException;
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -14,36 +16,31 @@ public interface IEmployeeService {
      * Return a list of all employees.
      *
      * @return Employee list
-     * @throws IOException      Required to be propagated by IEmployeeController.getAllEmployees()
-     * @throws ServiceException If some problem occurred
      */
-    List<Employee> getAllEmployees() throws IOException, ServiceException;
+    Flux<Employee> getAllEmployees();
 
     /**
      * Get a specific employee by ID
      *
      * @param id ID of desired Employee
      * @return Optional employee, Empty if the ID was not located.
-     * @throws ServiceException If some problem occurred
      */
-    Optional<Employee> getEmployeeById(int id) throws ServiceException;
+    Mono<Optional<Employee>> getEmployeeById(int id);
 
     /**
      * Create a new Employee in the back-end
      *
      * @param employee Employee to create
      * @return Created employee object
-     * @throws ServiceException If some problem occurred
      */
-    Employee createEmployee(Employee employee) throws ServiceException;
+    Mono<Employee> createEmployee(Map<String, Object> employee);
 
     /**
      * Delete an Employee, returning the name of the deleted employee
      *
      * @param id ID of Employee to delete
      * @return Name of deleted employee
-     * @throws ServiceException If some problem occurred
      */
-    String deleteEmployeeById(int id) throws ServiceException;
+    Mono<String> deleteEmployeeById(int id);
 
 }

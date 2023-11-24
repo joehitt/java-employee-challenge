@@ -2,8 +2,6 @@ package com.example.rqchallenge.employees;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Map;
-
 /**
  * Employee domain/model class.
  */
@@ -15,6 +13,10 @@ public class Employee {
     private int age;
     private String profileImage;
 
+    /**
+     * Default constructor provided for JSON deserialization and ease of use.
+     */
+    @SuppressWarnings("unused")
     public Employee() {
     }
 
@@ -28,42 +30,6 @@ public class Employee {
         setSalary(salary);
         setAge(age);
         setProfileImage(profileImage);
-    }
-
-    /**
-     * Helper method to parse singular Employee object from map of name-value pairs using the
-     * 'input' naming convention ('name', 'salary' etc.).
-     *
-     * @param input Map of name value pairs
-     * @return Employee
-     */
-    public static Employee fromMapInput(Map<String, Object> input) throws NumberFormatException {
-        Employee employee = new Employee();
-        employee.setName((String) input.get("name"));
-        employee.setSalary((int) input.get("salary"));
-        employee.setAge((int) input.get("age"));
-        employee.setProfileImage((String) input.get("profile_image"));
-        Object idObject = input.get("id");
-        employee.setId(idObject == null ? 0 : Integer.parseInt(idObject.toString()));
-        return employee;
-    }
-
-    /**
-     * Helper method to parse singular Employee object from map of name-value pairs using the
-     * 'output' naming convention ('employee_name', 'salary' etc.).
-     *
-     * @param input Map of name value pairs
-     * @return Employee
-     */
-    public static Employee fromMapOutput(Map<String, Object> input) {
-        Employee employee = new Employee();
-        employee.setName((String) input.get("employee_name"));
-        employee.setSalary((int) input.get("employee_salary"));
-        employee.setAge((int) input.get("employee_age"));
-        employee.setProfileImage((String) input.get("profile_image"));
-        Object id = input.get("id");
-        employee.setId(id == null ? 0 : Integer.parseInt(id + ""));
-        return employee;
     }
 
     /**
