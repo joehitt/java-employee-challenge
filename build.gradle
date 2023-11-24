@@ -16,8 +16,16 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
     implementation 'javax.inject:javax.inject:1'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // tool to detect impostor reactive (blocking) code
+    testImplementation 'io.projectreactor.tools:blockhound:1.0.8.RELEASE'
 }
 
 test {
     useJUnitPlatform()
+    // required to allow BlockHound tool to run with JDK 13
+    if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_13)) {
+        jvmArgs += [
+                "-XX:+AllowRedefinitionToAddDeleteMethods"
+        ]
+    }
 }

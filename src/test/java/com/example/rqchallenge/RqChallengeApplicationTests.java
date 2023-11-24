@@ -8,9 +8,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import reactor.blockhound.BlockHound;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -65,9 +67,30 @@ class RqChallengeApplicationTests {
     }
 
 
+    /**
+     * Assert that the BlockHound tool is working during testing.
+     * Executes intentionally blocking code and asserts that a RuntimeException is thrown.
+     */
+    @Test
+    @SuppressWarnings("BlockingMethodInNonBlockingContext")
+    public void testBlockHoundEnabled() {
+        assertThrows(RuntimeException.class, () -> {
+            Mono.delay(Duration.ofSeconds(1))
+                .doOnNext(it -> {
+                    try {
+                        Thread.sleep(1);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .block();
+        });
+    }
+
     @BeforeEach
     @SuppressWarnings("unchecked")
     public void init() {
+        BlockHound.install();
         generateTestData();
         // mock service
         when(employeeService.getAllEmployees()).thenReturn(Flux.fromIterable(testData));
