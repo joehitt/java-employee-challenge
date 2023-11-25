@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -103,8 +104,9 @@ public class EmployeeService implements IEmployeeService {
                      .onStatus(HttpStatus.TOO_MANY_REQUESTS::equals,
                                response -> response.bodyToMono(String.class)
                                                    .map(ServiceException::new))
-                     .bodyToMono(ApiResponse.<Employee>type())
+                     .bodyToMono(ApiResponse.<LinkedHashMap<String, Object>>type())
                      .map(ApiResponse::getData)
+                     .map(Employee::fromMapOutputCreate)
                      .flatMap(employee -> {
                          cache.put(employee.getId(), employee);
                          return Mono.just(employee);

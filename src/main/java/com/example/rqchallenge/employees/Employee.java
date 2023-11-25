@@ -105,4 +105,22 @@ public class Employee {
         return employee;
     }
 
+    public static Employee fromMapOutputCreate(Map<String, Object> input) {
+        Employee employee = new Employee();
+        employee.setName((String) input.get("name"));
+        employee.setSalary(toInt(input.get("salary")));
+        employee.setAge((toInt(input.get("age"))));
+        employee.setProfileImage((String) input.get("profile_image"));
+        employee.setId(toInt(input.get("id")));
+        return employee;
+    }
+
+    private static int toInt(Object obj) {
+        if (obj == null) {
+            throw new NumberFormatException("Could not parse null value to integer");
+        } else {
+            return Integer.parseInt(obj.toString());
+        }
+    }
+
 }
