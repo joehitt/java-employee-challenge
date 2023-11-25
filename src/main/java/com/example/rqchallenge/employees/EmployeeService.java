@@ -12,7 +12,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
-import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -198,17 +197,22 @@ public class EmployeeService implements IEmployeeService {
                       );
                   })
                   .orElseThrow(() -> new IdNotFoundException(id))
-                  .map(ApiResponse::getData));
+                  .map(x -> optionalEmployee.map(Employee::getName)
+                                            .orElseThrow(() -> new IdNotFoundException(id))));
         // @formatter:on
     }
 
-    @PostConstruct
+    /**
+     * We can load the employees on startup here by enabling @PostConstruct
+     */
+    // @PostConstruct
+    @SuppressWarnings("unused")
     public void init() {
         // attempt to load all employees on startup
         try {
             getAllEmployees().blockLast(Duration.ofSeconds(120));
         } catch (ServiceException e) {
-            log.warn("Could not load employees on startup, e");
+            log.warn("Could not load employees on startup", e);
         }
     }
 
