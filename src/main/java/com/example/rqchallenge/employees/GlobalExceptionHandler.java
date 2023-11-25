@@ -53,7 +53,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ServiceException.class)
     public String serviceException(ServiceException e) {
         log.error("Back-end API not available.", e);
-        return "The service is unavailable, please try again later.";
+        return e.getMessage();
     }
 
 }

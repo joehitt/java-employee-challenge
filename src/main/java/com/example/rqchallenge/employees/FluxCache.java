@@ -30,7 +30,7 @@ public class FluxCache<K, V> {
     /**
      * Minimum amount of time (in milliseconds) to wait between each request to the cache supplier.
      */
-    @Value("${employee.cache.throttle-time-ms}")
+    @Value("${employee.cache.throttle-time-ms:7200000}")
     private long throttleTime;
 
     public FluxCache() {

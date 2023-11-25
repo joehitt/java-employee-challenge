@@ -17,6 +17,7 @@ derby.log
 
 # Gradle artifacts
 .gradle
+.gradle/
 .gradletasknamecache
 /build
 buildSrc/build
