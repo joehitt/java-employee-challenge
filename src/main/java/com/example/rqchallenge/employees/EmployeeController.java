@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 
@@ -58,7 +57,7 @@ public class EmployeeController implements IEmployeeController {
         int intId = Integer.parseInt(id);
         return service.getEmployeeById(intId)
                       .flatMap(x -> x.map(Mono::just)
-                                     .orElseThrow(() -> new EmployeeIdNotFoundException(intId)));
+                                     .orElseThrow(() -> new IdNotFoundException(intId)));
     }
 
     /**

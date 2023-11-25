@@ -70,21 +70,23 @@ class RqChallengeApplicationTests {
     /**
      * Assert that the BlockHound tool is working during testing.
      * Executes intentionally blocking code and asserts that a RuntimeException is thrown.
+     * Admittedly, since we are mocking the service object here, we won't detect blocking within the service class
+     * unless we swap the mock service out for a live service (i.e. integration test), but at least can detect if
+     * blocking is happening up the call stack.
      */
     @Test
     @SuppressWarnings("BlockingMethodInNonBlockingContext")
     public void testBlockHoundEnabled() {
-        assertThrows(RuntimeException.class, () -> {
-            Mono.delay(Duration.ofSeconds(1))
-                .doOnNext(it -> {
-                    try {
-                        Thread.sleep(1);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .block();
-        });
+        assertThrows(RuntimeException.class,
+                     () -> Mono.delay(Duration.ofSeconds(1))
+                               .doOnNext(it -> {
+                                   try {
+                                       Thread.sleep(1);
+                                   } catch (InterruptedException e) {
+                                       throw new RuntimeException(e);
+                                   }
+                               })
+                               .block());
     }
 
     @BeforeEach
@@ -119,9 +121,7 @@ class RqChallengeApplicationTests {
         assertNotNull(employeeList);
         assertEquals(employeeList.size(), testData.size(), "Total size of results was incorrect.");
         IntStream.range(0, employeeList.size())
-                 .forEach(index -> {
-                     assertEmployeeMatches(testData.get(index), employeeList.get(index));
-                 });
+                 .forEach(index -> assertEmployeeMatches(testData.get(index), employeeList.get(index)));
     }
 
     private void assertEmployeeMatches(Employee expected,

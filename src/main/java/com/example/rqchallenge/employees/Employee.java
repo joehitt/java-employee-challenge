@@ -2,6 +2,8 @@ package com.example.rqchallenge.employees;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Map;
+
 /**
  * Employee domain/model class.
  */
@@ -83,6 +85,24 @@ public class Employee {
 
     public void setProfileImage(String profileImage) {
         this.profileImage = profileImage;
+    }
+
+    /**
+     * Helper method to parse singular Employee object from map of name-value pairs using the
+     * 'output' naming convention ('employee_name', 'salary' etc.).
+     *
+     * @param input Map of name value pairs
+     * @return Employee
+     */
+    public static Employee fromMapOutput(Map<String, Object> input) {
+        Employee employee = new Employee();
+        employee.setName((String) input.get("employee_name"));
+        employee.setSalary((int) input.get("employee_salary"));
+        employee.setAge((int) input.get("employee_age"));
+        employee.setProfileImage((String) input.get("profile_image"));
+        Object id = input.get("id");
+        employee.setId(id == null ? 0 : Integer.parseInt(id + ""));
+        return employee;
     }
 
 }

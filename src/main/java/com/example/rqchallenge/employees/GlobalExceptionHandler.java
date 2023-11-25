@@ -25,8 +25,8 @@ public class GlobalExceptionHandler {
 
     @ResponseStatus(NOT_FOUND)
     @ResponseBody
-    @ExceptionHandler(EmployeeIdNotFoundException.class)
-    public String employeeIdNotFoundException(EmployeeIdNotFoundException e) {
+    @ExceptionHandler(IdNotFoundException.class)
+    public String employeeIdNotFoundException(IdNotFoundException e) {
         String message = "The requested employee ID could not be found.";
         log.warn(message, e);
         return message;
